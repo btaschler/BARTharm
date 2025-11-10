@@ -14,14 +14,11 @@
 bartharm_inference <- function(num_iter, thinning_interval, X_iqm_matrix, X_bio_matrix, Y, hypers_mu, hypers_tau, opts_mu, opts_tau, var_scaling, site_labels,  alpha0 = 0.001, beta0 = 0.001){
   
   num_saved_iters <- ceiling(num_iter / thinning_interval) # Number of posterior samples saved
-  site_list <- unique(site_labels)
-  n_sites <- length(site_list)
   
   # Initialize matrices to store posterior samples
   mu_out <- matrix(NA, nrow = num_saved_iters, ncol = nrow(X_iqm_matrix))
   tau_out  <- matrix(NA, nrow = num_saved_iters, ncol = nrow(X_bio_matrix))
   sigma_out <- numeric(num_saved_iters)
-  sigma_site_out <- matrix(NA, nrow = num_saved_iters, ncol = n_sites)
   
   # Create BART forest objects for mu and tau estimation
   mu_forest <- MakeForest(hypers_mu, opts_mu)
@@ -33,8 +30,21 @@ bartharm_inference <- function(num_iter, thinning_interval, X_iqm_matrix, X_bio_
   
   save_index <- 1  # Index for storing samples
 
-  # Initial site-specific variances
-  sigma_sites <- rep(var(Y), n_sites)
+  if(var_scaling){
+    site_list <- unique(site_labels)
+    cat("Site labels:", site_list, "\n")
+    n_sites <- length(site_list)
+    cat("Number of sites:", n_sites, "\n")
+
+    sigma_site_out <- matrix(NA, nrow = num_saved_iters, ncol = n_sites)
+    cat("Initializing site-specific variances \n")
+    # Initial site-specific variances
+    sigma_sites <- rep(var(Y), n_sites)
+  }else{
+    print("Not using site-specific variances \n")
+    sigma_site_out <- matrix(NA, nrow = num_saved_iters, ncol = 1)
+  }
+  
   
   cat("Starting sampling\n")
   

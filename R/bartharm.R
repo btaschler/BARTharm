@@ -48,6 +48,7 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
     cat("Using site information","\n")
     sites <- X_iqm_matrix[[site_col]]
   } else{
+    cat("Site information not available","\n")
     sites <- NULL
   }
   
@@ -100,6 +101,7 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
     # Compute harmonized outcome by removing nuisance (mu) component
     cat("Evaluating harmonized feature: ", ll[i], "\n")
     if(var_scaling){
+      print("Using variance scaling for harmonization \n")
       # Global mean/variance for harmonization
       mu_global <- mean(colMeans(mu_out[(burn_in:num_saved_iters), ]))
       sigma_global <- mean(colMeans(sigma_site_out[(burn_in:num_saved_iters), ]))
@@ -110,6 +112,7 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
         y_harmonised[j] <- (Y_norm[j, i] - colMeans(mu_out[(burn_in:num_saved_iters), ])[j]) / sqrt(colMeans(sigma_site_out[(burn_in:num_saved_iters), ])[site_idx]) * sqrt(sigma_global) + mu_global
       }
     } else{
+      print("Not using variance scaling for harmonization \n")  
       y_harmonised <- Y_norm[,i] - colMeans(mu_out[(burn_in:num_saved_iters), ])
     }
     

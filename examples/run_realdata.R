@@ -59,7 +59,8 @@ df_harmonised <- bartharm(
   num_tree_mu = 200,                 # Trees in mu forest (IQMs)
   num_tree_tau = 50,                 # Trees in tau forest (bio features)
   beta_mu = 2, beta_tau = 2,         # BART prior parameters
-  gamma_mu = 0.95, gamma_tau = 0.95  # BART prior parameters
+  gamma_mu = 0.95, gamma_tau = 0.95,  # BART prior parameters
+  var_scaling = FALSE
 )
 
 # Extract harmonized versions of the outcomes

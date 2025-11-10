@@ -60,13 +60,14 @@ However, *BARTharm is not limited to a specific set of IQMs, or to a particular 
 
 Ensure your dataset is a single .RData file containing one data frame. Rows correspond to observations and the colums correspond to your variables. This data frame must include all necessary variables:
 - Biological covariates (e.g., Age, Sex). 
-- Image Quality Metrics (IQMs) (e.g., snv, cnr, qi_1, qi_2). 
+- Image Quality Metrics (IQMs) (e.g., snv, cnr, qi_1, qi_2).  
 - Outcome variables to be harmonized (e.g., NBV1, NBV2). 
 - A unique subject identifier (e.g., num_ID). 
+- If available, a unique scanner ID.
 
 We recommend the User to use all available biological covariates and all available image quality covariates to perform BARTharm harmonization. 
 
-**Consistent Column Naming**: The column names in your data frame must exactly match those you pass to the bartharm() function via the arguments `bio_col` for the biological covariates, `iqm_col` for the IQMs, `outcomes_col` for outcome variables to be harmonized, and `id_col` for the unique subject identifier (see `examples` directory).
+**Consistent Column Naming**: The column names in your data frame must exactly match those you pass to the bartharm() function via the arguments `bio_col` for the biological covariates, `iqm_col` for the IQMs, `outcomes_col` for outcome variables to be harmonized, `id_col` for the unique subject identifier, and `site_col` for the scanner/site ID (if available) (see `examples` directory).
 
 **No Missing Data**: The dataset must be complete, all rows must have valid (non-missing) values for each variable of each observation.
 
@@ -100,6 +101,8 @@ df_harmonised <- bartharm(saving_path = saving_path, ... )
 ```
 
 where `...` are the user-specified arguments needed for harmonization and explained in `examples/run_simulated.R` or `examples/run_real.R`. 
+
+If `var_scaling` is set to TRUE, user needs to also provide scanner IDs and the model harmonises both the mean and the variance. Otherwise just the mean.
 
 The returned object df_harmonised is a data frame which contains:
 - Original outcomes (e.g., NBV1, NBV2)

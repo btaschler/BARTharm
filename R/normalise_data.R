@@ -15,7 +15,8 @@ normalise_data <- function(data_bio, data_iqm, outcomes_col, id_col, site_col, v
   
   # Apply quantile normalization to IQM covariates, excluding num_ID
   norm_data_iqm <- as.data.frame(quantile_normalize_bart(data_iqm[, -which(names(data_iqm) %in% c(id_col, site_col))]))
-  if(var_scaling){
+  
+  if(length(site_col) > 0){
     print("Adding site information to IQM data")
     cat("Number of sites:", length(unique(data_iqm[[site_col]])), "\n")
     norm_data_iqm[[site_col]] <- as.numeric(data_iqm[[site_col]])  # Re-add site column

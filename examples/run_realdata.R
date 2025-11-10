@@ -24,7 +24,7 @@ saving_path <- "results/"
 bio_col <- c("Age", "Sex")
 
 # Specify column names for image quality metrics (IQMs)
-iqm_col <- c("snv", "cnr", "qi_1", "qi_2")
+iqm_col <- c("snv", "cnr", "qi_1", "qi_2") 
 
 # Specify column names for the outcomes to be harmonized
 outcomes_col <- c("NBV1", "NBV2")
@@ -32,7 +32,7 @@ outcomes_col <- c("NBV1", "NBV2")
 # Specify the name of the subject ID column
 id_col <- c("num_ID")
 
-# Specify the name of the site ID column
+# Specify the name of the scanner ID column (if available)
 site_col <- c("")
 
 # Specify the saving format

@@ -36,7 +36,7 @@ load_data <- function(filepath, id_col, bio_col, iqm_col, site_col, var_scaling)
     dplyr::select(id_col, bio_col, outcomes_col)
   
   # Select IQM covariate columns along with numerical ID
-  if(var_scaling){
+  if(length(site_col) > 0){
     data_iqm <-  df %>%
       dplyr::select(id_col, iqm_col, site_col)
   }else{

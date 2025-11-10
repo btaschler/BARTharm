@@ -76,7 +76,7 @@ bartharm_inference <- function(num_iter, thinning_interval, X_iqm_matrix, X_bio_
         sigma_sites[s] <- rinvgamma(1, shape=alpha_post, scale=beta_post)
       }
     }else{
-      sigma_sites <- NULL
+      sigma_sites <- NA
     }
     
     # Save samples at thinning intervals

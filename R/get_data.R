@@ -30,9 +30,10 @@ get_data <- function(simulate=FALSE, filepath = "", saving_path = "", save_forma
     
     id_col <- c("subid")
     outcomes_col <- c("outcome_simulated")
+    site_col <- c("scanner_id")
     
     cat("Normalising data \n")
-    normalised_data <- normalise_data(data_bio, data_iqm, outcomes_col, id_col)
+    normalised_data <- normalise_data(data_bio, data_iqm, outcomes_col, id_col, site_col, var_scaling = TRUE)
     
     norm_data_bio <- normalised_data$norm_data_bio
     norm_data_iqm <- normalised_data$norm_data_iqm
@@ -45,7 +46,7 @@ get_data <- function(simulate=FALSE, filepath = "", saving_path = "", save_forma
     
   }else{
     # Call function to load data
-    data <- load_data(filepath, id_col, bio_col, iqm_col, site_col)
+    data <- load_data(filepath, id_col, bio_col, iqm_col, site_col, var_scaling)
     data_bio <- data$data_bio
     data_iqm <- data$data_iqm
     df <- data$data
@@ -74,5 +75,5 @@ get_data <- function(simulate=FALSE, filepath = "", saving_path = "", save_forma
   }
   
   return(list("X_bio_matrix" = as.matrix(norm_data_bio), "X_iqm_matrix" = as.matrix(norm_data_iqm), "Y" = normalised_data$Y, "Y_norm" = normalised_data$Y_norm,
-              "original_means" = normalised_data$original_means, "original_sds" = normalised_data$original_sds, "df" = df))
+              "original_means" = normalised_data$original_means, "original_sds" = normalised_data$original_sds, "df" = df, "site_col" = site_col))
 }

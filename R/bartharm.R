@@ -29,6 +29,7 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
   if(simulate_data){
     cat("Simulating data \n")
     data <- get_data(simulate = TRUE, saving_path = saving_path, save_format = save_format,  n_subjects = n_subjects, linear_tau = linear_tau, linear_mu = linear_mu)
+    site_col <- data$site_col
     cat("Saved simulated data \n")
   }else{
     cat("Processing real data from", file_path ,"\n")
@@ -45,8 +46,8 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
   df <- data$df
 
   if(var_scaling){
-    cat("Using site information","\n")
-    sites <- X_iqm_matrix[[site_col]]
+    cat("Using site information from column: ", site_col[1],"\n")
+    sites <- X_iqm_matrix[, site_col[1]]
   } else{
     cat("Site information not available","\n")
     sites <- NULL

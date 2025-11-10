@@ -64,5 +64,5 @@ df_harmonised <- bartharm(
 )
 
 # Extract harmonized versions of the outcomes
-harmonised_NBV1 <- df_harmonised$NBV1_harmonised
-harmonised_NBV2 <- df_harmonised$NBV2_harmonised
+harmonised_NBV1 <- df_harmonised$NBV1_harmonised_original
+harmonised_NBV2 <- df_harmonised$NBV2_harmonised_original

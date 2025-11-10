@@ -17,8 +17,8 @@
 # - linear_mu: Logical. If TRUE, model scanner effects linearly.
 
 
-get_data <- function(simulate=FALSE, filepath = "", saving_path = "", save_format = "", id_col = c(), bio_col = c(), iqm_col = c(), outcomes_col = c(), 
-                     n_subjects = 1000, linear_tau = TRUE, linear_mu = TRUE){
+get_data <- function(simulate=FALSE, filepath = "", saving_path = "", save_format = "", id_col = c(), bio_col = c(), iqm_col = c(), outcomes_col = c(), site_col = c(), 
+                     n_subjects = 1000, linear_tau = TRUE, linear_mu = TRUE, var_scaling = FALSE){
   if(simulate){
     data <- simulate_data(n_subjects, linear_tau, linear_mu)
     data_bio <- data$data_bio
@@ -45,7 +45,7 @@ get_data <- function(simulate=FALSE, filepath = "", saving_path = "", save_forma
     
   }else{
     # Call function to load data
-    data <- load_data(filepath, id_col, bio_col, iqm_col)
+    data <- load_data(filepath, id_col, bio_col, iqm_col, site_col)
     data_bio <- data$data_bio
     data_iqm <- data$data_iqm
     df <- data$data
@@ -60,10 +60,11 @@ get_data <- function(simulate=FALSE, filepath = "", saving_path = "", save_forma
     print(colnames(data_iqm))
     
     cat("Normalising data \n")
-    normalised_data <- normalise_data(data_bio, data_iqm, outcomes_col, id_col)
+    normalised_data <- normalise_data(data_bio, data_iqm, outcomes_col, id_col, site_col, var_scaling)
     
     norm_data_bio <- normalised_data$norm_data_bio
     norm_data_iqm <- normalised_data$norm_data_iqm
+
     
     #save(file=paste0(saving_path, 'normalised_realdata_bio.RData'), norm_data_bio)
     #save(file=paste0(saving_path, 'normalised_realdata_iqm.RData'), norm_data_iqm)
@@ -72,5 +73,6 @@ get_data <- function(simulate=FALSE, filepath = "", saving_path = "", save_forma
     
   }
   
-  return(list("X_bio_matrix" = as.matrix(norm_data_bio), "X_iqm_matrix" = as.matrix(norm_data_iqm), "Y" = normalised_data$Y, "df" = df))
+  return(list("X_bio_matrix" = as.matrix(norm_data_bio), "X_iqm_matrix" = as.matrix(norm_data_iqm), "Y" = normalised_data$Y, "Y_norm" = normalised_data$Y_norm,
+              "original_means" = normalised_data$original_means, "original_sds" = normalised_data$original_sds, "df" = df))
 }

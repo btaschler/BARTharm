@@ -22,8 +22,8 @@
 # - gamma_mu, gamma_tau: BART prior parameters controlling sparsity.
 
 
-bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simulate_data = TRUE, bio_col = c(), iqm_col = c(), outcomes_col = c(), id_col = c(), n_subjects = 1000, linear_tau = TRUE, linear_mu = TRUE,
-                     num_iter = 5000, burn_in = 500, thinning_interval = 2, num_tree_mu = 200, num_tree_tau = 50, beta_mu = 2, beta_tau = 2, gamma_mu = 0.95, gamma_tau = 0.95){
+bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simulate_data = TRUE, bio_col = c(), iqm_col = c(), outcomes_col = c(), id_col = c(), site_col = c(), n_subjects = 1000, linear_tau = TRUE, linear_mu = TRUE,
+                     num_iter = 5000, burn_in = 500, thinning_interval = 2, num_tree_mu = 200, num_tree_tau = 50, beta_mu = 2, beta_tau = 2, gamma_mu = 0.95, gamma_tau = 0.95, var_scaling = FALSE){
   
   # Load or simulate data
   if(simulate_data){
@@ -32,14 +32,24 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
     cat("Saved simulated data \n")
   }else{
     cat("Processing real data from", file_path ,"\n")
-    data <- get_data(simulate = FALSE, filepath = file_path, save_format = save_format, saving_path = saving_path,  id_col = id_col, bio_col = bio_col, iqm_col = iqm_col, outcomes_col = outcomes_col)
+    data <- get_data(simulate = FALSE, filepath = file_path, save_format = save_format, saving_path = saving_path,  id_col = id_col, bio_col = bio_col, iqm_col = iqm_col, outcomes_col = outcomes_col, site_col = site_col, var_scaling = var_scaling)
   }
   
   # Extract normalized matrices and outcome
   X_bio_matrix <- data$X_bio_matrix
   X_iqm_matrix <- data$X_iqm_matrix
   Y <- as.data.frame(data$Y)
+  Y_norm <- as.data.frame(data$Y_norm)
+  original_means <- data$original_means
+  original_sds <- data$original_sds
   df <- data$df
+
+  if(var_scaling){
+    cat("Using site information","\n")
+    sites <- X_iqm_matrix[[site_col]]
+  } else{
+    sites <- NULL
+  }
   
   ll <- colnames(Y) # Names of outcome variables and ID column
   cat("Harmonizing: ", ll[1:(length(ll)-1)], "\n") # Skip ID column
@@ -53,15 +63,15 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
     cat("Executing harmonization for feature: ", ll[i], "\n")
     
     # Set up BART hyperparameters for mu (scanner effect) and tau (biological effect)
-    hypers_mu <- Hypers(X_iqm_matrix, Y[,i], num_tree = num_tree_mu, beta = beta_mu, gamma = gamma_mu) 
-    hypers_tau <- Hypers(X_bio_matrix, Y[,i], num_tree = num_tree_tau, beta = beta_tau, gamma = gamma_tau)
+    hypers_mu <- Hypers(X_iqm_matrix, Y_norm[,i], num_tree = num_tree_mu, beta = beta_mu, gamma = gamma_mu) 
+    hypers_tau <- Hypers(X_bio_matrix, Y_norm[,i], num_tree = num_tree_tau, beta = beta_tau, gamma = gamma_tau)
     
     # Use default options for BART forests
     opts_mu <- Opts()
     opts_tau <- Opts()
     
     # Run the Gibbs sampler for mu and tau
-    bartharm_output <- bartharm_inference(num_iter, thinning_interval, X_iqm_matrix, X_bio_matrix, Y[,i], hypers_mu, hypers_tau, opts_mu, opts_tau)
+    bartharm_output <- bartharm_inference(num_iter, thinning_interval, X_iqm_matrix, X_bio_matrix, Y_norm[,i], hypers_mu, hypers_tau, opts_mu, opts_tau, var_scaling, sites)
     
     # Extract posterior draws
     mu_out <- bartharm_output$mu_out
@@ -74,25 +84,50 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
     save(file=paste0(saving_path, 'mu_out_',ll[i],'.RData'), mu_out)
     save(file=paste0(saving_path, 'tau_out_',ll[i],'.RData'), tau_out)
     save(file=paste0(saving_path, 'sigma_out_',ll[i],'.RData'), sigma_out)
+
+    if(var_scaling){
+      sigma_site_out <- bartharm_output$sigma_site_out
+      save(file=paste0(saving_path, 'sigma_site_out_',ll[i],'.RData'), sigma_site_out)
+    }
     
     # Compute posterior mean prediction
     y_pred <- colMeans(mu_out[(burn_in:num_saved_iters), ]) + colMeans(tau_out[(burn_in:num_saved_iters), ])
     
     # Evaluate RMSE between predicted and observed
-    rmse_value <- rmse(Y[,i], y_pred)
+    rmse_value <- rmse(Y_norm[,i], y_pred)
     cat("Prediction RMSE for feature ", ll[i], ": ", rmse_value, "\n")
     
     # Compute harmonized outcome by removing nuisance (mu) component
     cat("Evaluating harmonized feature: ", ll[i], "\n")
-    y_harmonised <- Y[,i] - colMeans(mu_out[(burn_in:num_saved_iters), ])
+    if(var_scaling){
+      # Global mean/variance for harmonization
+      mu_global <- mean(colMeans(mu_out[(burn_in:num_saved_iters), ]))
+      sigma_global <- mean(colMeans(sigma_site_out[(burn_in:num_saved_iters), ]))
+      # Harmonized outcome (ComBat scaling)
+      y_harmonised <- numeric(length(Y_norm[,i]))
+      for (j in seq_along(Y_norm[,i])) {
+        site_idx <- match(sites[j], unique(sites))
+        y_harmonised[j] <- (Y_norm[j, i] - colMeans(mu_out[(burn_in:num_saved_iters), ])[j]) / sqrt(colMeans(sigma_site_out[(burn_in:num_saved_iters), ])[site_idx]) * sqrt(sigma_global) + mu_global
+      }
+    } else{
+      y_harmonised <- Y_norm[,i] - colMeans(mu_out[(burn_in:num_saved_iters), ])
+    }
     
     # Add harmonized and predicted values to the dataframe
-    df_harmonised[, paste0(ll[i], "_harmonised")] <- y_harmonised
-    df_harmonised[, paste0(ll[i], "_predicted")] <- y_pred
+    df_harmonised[, paste0(ll[i], "_harmonised_raw")] <- y_harmonised
+    df_harmonised[, paste0(ll[i], "_predicted_raw")] <- y_pred
+
+    y_harmonised_original <- y_harmonised * original_sds[i] + original_means[i]
+    y_pred_original <- y_pred * original_sds[i] + original_means[i]
+
+    # Add harmonized and predicted values to the dataframe
+    df_harmonised[, paste0(ll[i], "_harmonised_original")] <- y_harmonised_original
+    df_harmonised[, paste0(ll[i], "_predicted_original")] <- y_pred_original
     
     # Save harmonized outcome to disk
     cat("Saving harmonized feature at $harmonised_", ll[i] , " \n")
-    save(file=paste0(saving_path, 'harmonised_',ll[i],'.RData'), y_harmonised)
+    save(file=paste0(saving_path, 'harmonised_',ll[i],'_raw.RData'), y_harmonised)
+    save(file=paste0(saving_path, 'harmonised_',ll[i],'_original.RData'), y_harmonised_original)
   }
   
   # Save the full harmonized dataframe

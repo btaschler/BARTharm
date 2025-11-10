@@ -17,7 +17,7 @@ Install required R packages:
 
 ```r
 # If not already installed
-install.packages(c("dplyr", "matrixStats", "caret"))
+install.packages(c("dplyr", "matrixStats", "caret", "MCMCpack"))
 devtools::install_github("theodds/SoftBart")  # for SoftBart
 ```
 

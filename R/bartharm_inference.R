@@ -11,14 +11,17 @@
 # - hypers_mu, hypers_tau: Hyperparameter settings for mu and tau forests
 # - opts_mu, opts_tau: Options for mu and tau forests
 
-bartharm_inference <- function(num_iter, thinning_interval, X_iqm_matrix, X_bio_matrix, Y, hypers_mu, hypers_tau, opts_mu, opts_tau){
+bartharm_inference <- function(num_iter, thinning_interval, X_iqm_matrix, X_bio_matrix, Y, hypers_mu, hypers_tau, opts_mu, opts_tau, var_scaling, site_labels,  alpha0 = 0.001, beta0 = 0.001){
   
   num_saved_iters <- ceiling(num_iter / thinning_interval) # Number of posterior samples saved
+  site_list <- unique(site_labels)
+  n_sites <- length(site_list)
   
   # Initialize matrices to store posterior samples
   mu_out <- matrix(NA, nrow = num_saved_iters, ncol = nrow(X_iqm_matrix))
   tau_out  <- matrix(NA, nrow = num_saved_iters, ncol = nrow(X_bio_matrix))
   sigma_out <- numeric(num_saved_iters)
+  sigma_site_out <- matrix(NA, nrow = num_saved_iters, ncol = n_sites)
   
   # Create BART forest objects for mu and tau estimation
   mu_forest <- MakeForest(hypers_mu, opts_mu)
@@ -29,6 +32,9 @@ bartharm_inference <- function(num_iter, thinning_interval, X_iqm_matrix, X_bio_
   tau <- as.numeric(predict(tau_lm, newdata = as.data.frame(X_bio_matrix)))
   
   save_index <- 1  # Index for storing samples
+
+  # Initial site-specific variances
+  sigma_sites <- rep(var(Y), n_sites)
   
   cat("Starting sampling\n")
   
@@ -45,16 +51,34 @@ bartharm_inference <- function(num_iter, thinning_interval, X_iqm_matrix, X_bio_
     R <- (as.numeric(Y) - mu)  # Update residuals for tau estimation
     
     tau <- tau_forest$do_gibbs(X_bio_matrix, R, X_bio_matrix, 1)  # Update tau using Gibbs sampling
+
+    if(var_scaling){
+      # Compute residuals
+      residuals <- as.numeric(Y) - mu - tau
+      
+      # Update site-specific variances (ComBat style)
+      for (s in seq_along(site_list)) {
+        mask <- site_labels == site_list[s]
+        nj <- sum(mask)
+        res_j <- residuals[mask]
+        alpha_post <- alpha0 + nj/2
+        beta_post <- beta0 + sum(res_j^2)/2
+        sigma_sites[s] <- rinvgamma(1, shape=alpha_post, scale=beta_post)
+      }
+    }else{
+      sigma_sites <- NULL
+    }
     
     # Save samples at thinning intervals
     if (iter %% thinning_interval == 0) {
       mu_out[save_index,] <- mu
       tau_out[save_index,]  <- tau
       sigma_out[save_index]  <- sigma
+      sigma_site_out[save_index, ] <- sigma_sites
       save_index <- save_index + 1 
     }
   }
   
   # Return estimated parameters
-  return(list("mu_out" = mu_out, "tau_out" = tau_out, "sigma_out" = sigma_out))
+  return(list("mu_out" = mu_out, "tau_out" = tau_out, "sigma_out" = sigma_out, "sigma_site_out" = sigma_site_out))
 }

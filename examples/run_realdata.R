@@ -3,6 +3,7 @@ library(caret)
 library(SoftBart)
 library(dplyr)
 library(matrixStats)
+library(MCMCpack)
 
 # Loading functions
 source("R/bartharm.R")
@@ -31,6 +32,9 @@ outcomes_col <- c("NBV1", "NBV2")
 # Specify the name of the subject ID column
 id_col <- c("num_ID")
 
+# Specify the name of the site ID column
+site_col <- c("")
+
 # Specify the saving format
 save_format = "RData" # can also be csv or tsv
 
@@ -48,8 +52,9 @@ df_harmonised <- bartharm(
   iqm_col = iqm_col,                 # IQM covariates
   outcomes_col = outcomes_col,       # Outcome variables to harmonize
   id_col = id_col,                   # Subject ID column
-  num_iter = 5000,                   # Number of MCMC iterations
-  burn_in = 500,                     # Burn-in iterations
+  site_col = site_col,               # Site ID column
+  num_iter = 500,                    # Number of MCMC iterations
+  burn_in = 50,                      # Burn-in iterations
   thinning_interval = 2,             # Thinning
   num_tree_mu = 200,                 # Trees in mu forest (IQMs)
   num_tree_tau = 50,                 # Trees in tau forest (bio features)

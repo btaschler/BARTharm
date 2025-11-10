@@ -8,7 +8,7 @@
 # - bio_col: Vector of column names corresponding to biological covariates
 # - iqm_col: Vector of column names corresponding to IQM covariates
 
-load_data <- function(filepath, id_col, bio_col, iqm_col){
+load_data <- function(filepath, id_col, bio_col, iqm_col, site_col){
 
   # Determine file extension
   ext <- tools::file_ext(filepath)
@@ -37,7 +37,7 @@ load_data <- function(filepath, id_col, bio_col, iqm_col){
   
   # Select IQM covariate columns along with numerical ID
   data_iqm <-  df %>%
-    dplyr::select(id_col, iqm_col)
+    dplyr::select(id_col, iqm_col, site_col)
   
   # Return the processed datasets
   return(list("data" = df, "data_bio" = data_bio, "data_iqm" = data_iqm))

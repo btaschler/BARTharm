@@ -102,7 +102,7 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
     # Compute harmonized outcome by removing nuisance (mu) component
     cat("Evaluating harmonized feature: ", ll[i], "\n")
     if(var_scaling){
-      print("Using variance scaling for harmonization \n")
+      print("Using variance scaling to calculated harmonized outcome \n")
       # Global mean/variance for harmonization
       mu_global <- mean(colMeans(mu_out[(burn_in:num_saved_iters), ]))
       sigma_global <- mean(colMeans(sigma_site_out[(burn_in:num_saved_iters), ]))
@@ -113,7 +113,7 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
         y_harmonised[j] <- (Y_norm[j, i] - colMeans(mu_out[(burn_in:num_saved_iters), ])[j]) / sqrt(colMeans(sigma_site_out[(burn_in:num_saved_iters), ])[site_idx]) * sqrt(sigma_global) + mu_global
       }
     } else{
-      print("Not using variance scaling for harmonization \n")  
+      print("Not using variance scaling to calculated harmonized outcome \n")  
       y_harmonised <- Y_norm[,i] - colMeans(mu_out[(burn_in:num_saved_iters), ])
     }
     
@@ -132,16 +132,23 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
     cat("Saving harmonized feature at $harmonised_", ll[i] , " \n")
     save(file=paste0(saving_path, 'harmonised_',ll[i],'_raw.RData'), y_harmonised)
     save(file=paste0(saving_path, 'harmonised_',ll[i],'_original.RData'), y_harmonised_original)
+
+    cat("Saving predicted feature at $harmonised_", ll[i] , " to evaluate BARTharm fit \n")
+    save(file=paste0(saving_path, 'predicted_',ll[i],'_raw.RData'), y_pred)
+    save(file=paste0(saving_path, 'predicted_',ll[i],'_original.RData'), y_pred_original)
   }
   
   # Save the full harmonized dataframe
-  cat("Saving final harmonized dataset\n")
+  
   if(simulate_data){
     #save(file=paste0(saving_path, 'harmonised_simulated_df.RData'), df_harmonised)
+    cat("Saving final harmonized dataset\n")
     saving_data(df_harmonised, "harmonised_simulated_df", saving_path, save_format = save_format)
-  }else{
-    #save(file=paste0(saving_path, 'harmonised_realdata_df.RData'), df_harmonised)
-    saving_data(df_harmonised, "harmonised_realdata_df", saving_path, save_format = save_format)
+  } else {
+    if((length(ll)-1)>1){
+      cat("Saving final harmonized dataset\n")
+      saving_data(df_harmonised, "harmonised_realdata_df", saving_path, save_format = save_format)
+    }
   }
   
   return(df_harmonised)

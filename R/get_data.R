@@ -52,7 +52,7 @@ get_data <- function(simulate=FALSE, filepath = "", saving_path = "", save_forma
     df <- data$data
     
     #save(file=paste0(saving_path, 'realdata_df.RData'), df)
-    saving_data(df, "realdata_df", saving_path, save_format = save_format) 
+    saving_data(df, "filtered_realdata_df", saving_path, save_format = save_format) 
     
     # Verify that the split happened correctly
     print("Bio column names:")

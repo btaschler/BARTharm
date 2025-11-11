@@ -33,7 +33,7 @@ outcomes_col <- c("NBV1", "NBV2")
 id_col <- c("num_ID")
 
 # Specify the name of the scanner ID column (if available)
-site_col <- c("")
+site_col <- c() # leave empty if scanner IDs are not available
 
 # Specify the saving format
 save_format = "RData" # can also be csv or tsv
@@ -59,8 +59,8 @@ df_harmonised <- bartharm(
   num_tree_mu = 200,                 # Trees in mu forest (IQMs)
   num_tree_tau = 50,                 # Trees in tau forest (bio features)
   beta_mu = 2, beta_tau = 2,         # BART prior parameters
-  gamma_mu = 0.95, gamma_tau = 0.95,  # BART prior parameters
-  var_scaling = FALSE
+  gamma_mu = 0.95, gamma_tau = 0.95, # BART prior parameters
+  var_scaling = FALSE                # Whether to harmonize variance
 )
 
 # Extract harmonized versions of the outcomes

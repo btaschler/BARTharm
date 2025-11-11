@@ -19,7 +19,7 @@ normalise_data <- function(data_bio, data_iqm, outcomes_col, id_col, site_col, v
   if(length(site_col) > 0){
     print("Adding site information to IQM data")
     cat("Number of sites:", length(unique(data_iqm[[site_col]])), "\n")
-    norm_data_iqm[[site_col]] <- as.numeric(data_iqm[[site_col]])  # Re-add site column
+    norm_data_iqm[[site_col]] <- as.numeric(as.factor(data_iqm[[site_col]]))  # Re-add site column
   }
 
   # Keep only the outcome variables and num_ID

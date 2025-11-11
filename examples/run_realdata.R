@@ -36,7 +36,7 @@ id_col <- c("num_ID")
 site_col <- c() # leave empty if scanner IDs are not available
 
 # Specify the saving format
-save_format = "RData" # can also be csv or tsv
+save_format = "RData" # can also be rds, csv or tsv
 
 # Run BARTharm harmonization on real data
 # - Loads and normalizes data

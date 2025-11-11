@@ -99,7 +99,9 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
     }
     
     # Compute posterior mean prediction
-    y_pred <- colMeans(mu_out[(burn_in:num_saved_iters), ]) + colMeans(tau_out[(burn_in:num_saved_iters), ])
+    #* NOTE: starting index at 'burn_in' is wrong since mu_out and tau_out are also thinned during burn-in --> instead, start from: burn_in/thinning_interval+1
+    #* y_pred <- colMeans(mu_out[(burn_in:num_saved_iters), ]) + colMeans(tau_out[(burn_in:num_saved_iters), ])
+    y_pred <- colMeans(mu_out[(burn_in/thinning_interval+1):num_saved_iters, ]) + colMeans(tau_out[(burn_in/thinning_interval+1):num_saved_iters, ])
     
     # Evaluate RMSE between predicted and observed
     rmse_value <- rmse(Y_norm[,i], y_pred)
@@ -110,17 +112,17 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
     if(var_scaling){
       print("Using variance scaling for harmonization \n")
       # Global mean/variance for harmonization
-      mu_global <- mean(colMeans(mu_out[(burn_in:num_saved_iters), ]))
-      sigma_global <- mean(colMeans(sigma_site_out[(burn_in:num_saved_iters), ]))
+      mu_global <- mean(colMeans(mu_out[(burn_in/thinning_interval+1):num_saved_iters, ]))
+      sigma_global <- mean(colMeans(sigma_site_out[(burn_in/thinning_interval+1):num_saved_iters, ]))
       # Harmonized outcome (ComBat scaling)
       y_harmonised <- numeric(length(Y_norm[,i]))
       for (j in seq_along(Y_norm[,i])) {
         site_idx <- match(sites[j], unique(sites))
-        y_harmonised[j] <- (Y_norm[j, i] - colMeans(mu_out[(burn_in:num_saved_iters), ])[j]) / sqrt(colMeans(sigma_site_out[(burn_in:num_saved_iters), ])[site_idx]) * sqrt(sigma_global) + mu_global
+        y_harmonised[j] <- (Y_norm[j, i] - colMeans(mu_out[(burn_in/thinning_interval+1):num_saved_iters, ])[j]) / sqrt(colMeans(sigma_site_out[(burn_in/thinning_interval+1):num_saved_iters, ])[site_idx]) * sqrt(sigma_global) + mu_global
       }
     } else{
       print("Not using variance scaling for harmonization \n")  
-      y_harmonised <- Y_norm[,i] - colMeans(mu_out[(burn_in:num_saved_iters), ])
+      y_harmonised <- Y_norm[,i] - colMeans(mu_out[(burn_in/thinning_interval+1):num_saved_iters, ]) 
     }
     
     # Add harmonized and predicted values to the dataframe

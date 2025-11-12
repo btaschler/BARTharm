@@ -110,7 +110,7 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
     # Compute harmonized outcome by removing nuisance (mu) component
     cat("Evaluating harmonized feature: ", ll[i], "\n")
     if(var_scaling){
-      print("Using variance scaling for harmonization \n")
+      print("Using variance scaling to calculated harmonized outcome \n")
       # Global mean/variance for harmonization
       mu_global <- mean(colMeans(mu_out[(burn_in/thinning_interval+1):num_saved_iters, ]))
       sigma_global <- mean(colMeans(sigma_site_out[(burn_in/thinning_interval+1):num_saved_iters, ]))
@@ -148,13 +148,16 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
   }
   
   # Save the full harmonized dataframe
-  cat("Saving final harmonized dataset\n")
+  
   if(simulate_data){
     #save(file=paste0(saving_path, 'harmonised_simulated_df.RData'), df_harmonised)
+    cat("Saving final harmonized dataset\n")
     saving_data(df_harmonised, "harmonised_simulated_df", saving_path, save_format = save_format)
-  }else{
-    #save(file=paste0(saving_path, 'harmonised_realdata_df.RData'), df_harmonised)
-    saving_data(df_harmonised, "harmonised_realdata_df", saving_path, save_format = save_format)
+  } else {
+    if((length(ll)-1)>1){
+      cat("Saving final harmonized dataset\n")
+      saving_data(df_harmonised, "harmonised_realdata_df", saving_path, save_format = save_format)
+    }
   }
   
   return(df_harmonised)

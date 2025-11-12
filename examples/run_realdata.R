@@ -60,7 +60,7 @@ df_harmonised <- bartharm(
   num_tree_tau = 50,                 # Trees in tau forest (bio features)
   beta_mu = 2, beta_tau = 2,         # BART prior parameters
   gamma_mu = 0.95, gamma_tau = 0.95, # BART prior parameters
-  var_scaling = FALSE                # Whether to harmonize variance
+  var_scaling = FALSE                # Whether to harmonize variance (is set to TRUE, site_col must be provided)
 )
 
 # Extract harmonized versions of the outcomes

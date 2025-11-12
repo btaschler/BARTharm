@@ -19,7 +19,7 @@ source("R/saving_data.R")
 saving_path <- "results/"
 
 # Specify the saving format
-save_format = "RData" # can also be csv or tsv
+save_format = "RData" # can also be rds, csv or tsv
 
 # Run the BARTharm pipeline on simulated data
 # - Simulates 1000 subjects with linear outcome and scanner effects

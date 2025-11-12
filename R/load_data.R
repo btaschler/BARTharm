@@ -18,6 +18,9 @@ load_data <- function(filepath, id_col, bio_col, iqm_col, site_col, var_scaling)
     cat("Loading RData file\n")
     loaded_name <- load(file = filepath)
     df <- get(loaded_name)
+  } else if (ext == "rds") {
+    cat("Loading rds file\n")
+    df <- readRDS(filepath)
   } else if (ext == "csv") {
     cat("Loading csv file\n")
     df <- read.csv(filepath, stringsAsFactors = TRUE)
@@ -25,7 +28,7 @@ load_data <- function(filepath, id_col, bio_col, iqm_col, site_col, var_scaling)
     cat("Loading tsv file\n")
     df <- read.delim(filepath, stringsAsFactors = TRUE)
   } else {
-    stop("Unsupported file type: must be .RData, .csv, or .tsv")
+    stop("Unsupported file type: must be .RData, .rds, .csv, or .tsv")
   }
 
   # Remove rows with missing values

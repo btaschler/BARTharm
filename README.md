@@ -27,15 +27,18 @@ devtools::install_github("theodds/SoftBart")  # for SoftBart
 
 ``` 
 bartharm/
-├── R/                        # Core R functions
-│   ├── simulate_data.R       # Generate synthetic scanner-biased data
-│   ├── load_data.R           # Load and process real data
-│   ├── get_data.R            # Get data for BARTharm
-│   ├── normalise_data.R      # Data normalization
-│   ├── bartharm_inference.R  # Gibbs sampler for BARTharm
-│   ├── bartharm.R            # Main harmonization function
-├── data/                     # Real or example datasets
+├── R/                                   # Core R functions
+│   ├── simulate_data.R                  # Generate synthetic scanner-biased data
+│   ├── load_data.R                      # Load and process real data
+│   ├── get_data.R                       # Get data for BARTharm
+│   ├── normalise_data.R                 # Data normalization
+│   ├── bartharm_inference.R             # Gibbs sampler for BARTharm
+│   ├── bartharm.R                       # Main harmonization function
+|   |__ combine_harmonised_outcomes.R    # Postprocessing function 
+├── data/                                # Real or example datasets
 │   └── real_data.RData
+│   └── real_data.csv
+│   └── real_data.tsv
 ├── examples/                 # Example usage scripts
 │   ├── run_simulated.R
 │   └── run_real.R
@@ -77,6 +80,7 @@ You can provide your dataset in one of the following formats:
 - .RData 
 - .csv 
 - .tsv 
+- .rds
 
 Pass the path to one of the above file types as the `file_path` argument in `bartharm()`.
 
@@ -105,33 +109,33 @@ where `...` are the user-specified arguments needed for harmonization and explai
 If `var_scaling` is set to TRUE, user needs to also provide scanner IDs and the model harmonises both the mean and the variance. Otherwise just the mean.
 
 The returned object df_harmonised is a data frame which contains:
-- Original outcomes (e.g., NBV1, NBV2)
-- Harmonized outcomes (e.g., NBV1_harmonised, NBV2_harmonised)
+- Original outcomes 
+- Harmonized outcomes 
+- Predicted outcomes 
 - Original real data or simulated data
-
-To extract harmonized outcomes:
-
-```
-harmonised_NBV1 <- df_harmonised$NBV1_harmonised
-harmonised_NBV2 <- df_harmonised$NBV2_harmonised
-```
 
 You can inspect the full returned dataframe with `head(df_harmonised)`.
 
+On real data, when running `bartharm()` sequentially, i.e., `length(outcomes_col) > 1`, the returned `df_harmonised` will already include all harmonised outcomes provided in `outcomes_col` and is saved to disk at `<saving_path>/df_combined_harmonised_realdata.<save_format>`.
+When instead running `bartharm()` in parallel, one outcome at a time, `df_harmonised` will only include the current outcome being harmonised. 
+
 ###  Automatic Saving to Disk
 
-The User can specify a format in the argument `save_format` between RData, csv and tsv for the saved dataframe. BARTharm automatically saves these key outputs to the specified `saving_path` directory:
+The User can specify a format in the argument `save_format` between RData, csv, rds and tsv for the saved dataframe. BARTharm automatically saves these key outputs to the specified `saving_path` directory:
 
-- Original, pre-processed, Real Data or Simulated Data: The original dataset is saved as `simulated_df.<save_format>` for simulated data, `realdata_df.<save_format>` for real data, using the specified preferred `save_format`.
-- Normalised biological covariate data and iqm covariate data. Original pre-processed, normalised, Real Data or Simulated Data divided into either bio or iqm are saved as `normalised_simdata_bio.<save_format>/ normalised_simdata_iqm.<save_format>` for simulated data, `normalised_realdata_bio.<save_format>/ normalised_realdata_iqm.<save_format>` for real data, using the specified preferred `save_format`.
-- Individual harmonized outcomes: For each outcome specified in outcomes_col, a separate .RData file is saved as `results/harmonised_<OutcomeName>.RData`
-- Full harmonized dataset: The complete df_harmonised containing the original data plus the harmonized outcomes is saved as `harmonised_simulated_df.<save_format>` for simulated data, `harmonised_realdata_df.<save_format>` for real data, using the specified preferred `save_format`.
-- Full Gibbs Chains: Posterior samples from the Gibbs sampler are saved as .RData files, including:
-  - Mu chains (scanner-related nuisance effects) `results/mu_out_<OutcomeName>.RData`
-  - Tau chains (biological signal effects) `results/tau_out_<OutcomeName>.RData`
-  - Residual noise chains (posterior noise) `results/sigma_out_<OutcomeName>.RData`
+- Original, pre-processed, Real Data or Simulated Data: The original dataset is saved as `<saving_path>/simulated_df.<save_format>` for simulated data, `<saving_path>/filtered_realdata_df.<save_format>` for real data, using the specified preferred `save_format`.
+- Normalised biological covariate data and iqm covariate data. Original pre-processed, normalised, Real Data or Simulated Data divided into either bio or iqm are saved as `<saving_path>/normalised_simdata_bio.<save_format>/ normalised_simdata_iqm.<save_format>` for simulated data, `<saving_path>/normalised_realdata_bio.<save_format>/ <saving_path>/normalised_realdata_iqm.<save_format>` for real data, using the specified preferred `save_format`.
+- Individual harmonized and predicted outcomes: For each outcome specified in outcomes_col, separate files are saved as `<saving_path>/harmonised_<OutcomeName>_raw.<save_format>` or `<saving_path>/harmonised_<OutcomeName>_original.<save_format>`. `_raw` represents the harmonised outcome in the 0-1 normalised scale, and should be used if doing meta-analysis between different harmonised datasets. `_original` represents the harmonised outcome in the original outcome scale and can be compared to the observed outcome to assess harmonization. If `var_scaling = TRUE`, `<saving_path>/harmonised_<OutcomeName>_scaled_raw.<save_format>` or `<saving_path>/harmonised_<OutcomeName>_scaled_original.<save_format>` are also saved, where variance scaling is applied. The predicted outcomes are also saved in both scaled, which can be used to assess the goodness of the BARTharm fit to the data.
+- Full Gibbs Chains: Posterior samples from the Gibbs sampler are saved in the pre-specified format, including:
+  - Mu chains (scanner-related nuisance effects) `<saving_path>/mu_out_<OutcomeName>.<save_format>`
+  - Tau chains (biological signal effects) `<saving_path>/tau_out_<OutcomeName>.<save_format>`
+  - Residual noise chains (posterior noise) `<saving_path>/sigma_out_<OutcomeName>.<save_format>`
+  - If `var_scaling = TRUE`, scanner/site-specific standard deviations are also saved `<saving_path>/sigma_site_out_<OutcomeName>.<save_format>`
+- Full harmonized dataset: If `bartharm()` is run sequentially, the complete df_harmonised containing the original data plus the harmonized and predicted outcomes is saved as `<saving_path>/df_combined_harmonised_realdata.<save_format>` for real data, `<saving_path>/harmonised_simulated_df.<save_format>` for simulated data, using the specified preferred `save_format`. Otherwise, if `bartharm()` is run in parallel, one outcome at a time, we provide a post-processing script to combined everything into a single dataframe once all outcomes have been harmonised. To use it, make sure all output files are correctly saved into the pre-specified `saving_path` and then run 
+```
+df_harmonised <- combine_harmonised_outcomes(saving_path, save_format)
+```
 
-The `results` directory contains examplar outputs from running the `run_simulated.R` example script with `save_format = "RData`.
 
 
 ### Troubleshooting the outcome
@@ -140,7 +144,7 @@ Residual noise Gibbs chain can be used to examine MCMC convergence and evaluate 
 
 
 ```
-load("results/sigma_out_<OutcomeName>.RData")
+load("<saving_path>/sigma_out_<OutcomeName>.<save_format>")
 plot(sigma_out_<OutcomeName>, type = 'l', main = "Trace plot of residual noise for <OutcomeName>")
 ```
 
@@ -161,7 +165,7 @@ If your chain instead looks like the one below — bouncing around slowly, stuck
 
 To ensure efficient and effective use of `bartharm()` across different datasets and applications, consider the following best practices for setting up your harmonization pipeline:
 
-- **Voxel-wise harmonization**. If you intend to harmonize voxel-wise data (i.e., a large number of high-dimensional imaging features), it is strongly recommended to Sspecify one voxel/feature at a time in the `outcomes_col` argument and parallelize computation across voxels to reduce runtime.
+- **Voxel-wise harmonization**. If you intend to harmonize voxel-wise data (i.e., a large number of high-dimensional imaging features), it is strongly recommended to specify one voxel/feature at a time in the `outcomes_col` argument and parallelize computation across voxels to reduce runtime.
 
 - **Harmonizing few summary features (e.g., IDPs)**. If you are working with a small number of imaging-derived phenotypes (IDPs) or summary metrics (e.g., NBV1, NBV2), you can safely specify all of them together in the outcomes_col list and will obtain results is feasible runtimes.
 

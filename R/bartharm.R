@@ -56,7 +56,9 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
   ll <- colnames(Y) # Names of outcome variables and ID column
   cat("Harmonizing: ", ll[1:(length(ll)-1)], "\n") # Skip ID column
   
-  num_saved_iters <- ceiling(num_iter / thinning_interval) # Number of posterior samples saved
+  #* num_saved_iters <- ceiling(num_iter / thinning_interval) # Number of posterior samples saved
+  num_saved_iters <- floor(num_iter / thinning_interval)
+  #* NOTE: this will create an error if num_iter %% thinning_inverval != 0 --> replace ceiling() with floor()
   
   df_harmonised <- df  # Make a copy of the raw data to store harmonized results
   
@@ -83,9 +85,13 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
     # Save posterior samples
     cat("Saving full posterior samples for feature: ", ll[i], "\n")
     
-    save(file=paste0(saving_path, 'mu_out_',ll[i],'.RData'), mu_out)
-    save(file=paste0(saving_path, 'tau_out_',ll[i],'.RData'), tau_out)
-    save(file=paste0(saving_path, 'sigma_out_',ll[i],'.RData'), sigma_out)
+    #*save(file=paste0(saving_path, 'mu_out_',ll[i],'.RData'), mu_out)
+    #*save(file=paste0(saving_path, 'tau_out_',ll[i],'.RData'), tau_out)
+    #*save(file=paste0(saving_path, 'sigma_out_',ll[i],'.RData'), sigma_out)
+    #*note: allow different save formats
+    saving_data(mu_out, file_name = paste0('mu_out_',ll[i]), saving_path, save_format = save_format)
+    saving_data(tau_out, file_name = paste0('tau_out_',ll[i]), saving_path, save_format = save_format)
+    saving_data(sigma_out, file_name = paste0('sigma_out_',ll[i]), saving_path, save_format = save_format)
 
     if(var_scaling){
       sigma_site_out <- bartharm_output$sigma_site_out
@@ -93,7 +99,7 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
     }
     
     # Compute posterior mean prediction
-    y_pred <- colMeans(mu_out[(burn_in:num_saved_iters), ]) + colMeans(tau_out[(burn_in:num_saved_iters), ])
+    y_pred <- colMeans(mu_out[(burn_in/thinning_interval+1):num_saved_iters, ]) + colMeans(tau_out[(burn_in/thinning_interval+1):num_saved_iters, ])
     
     # Evaluate RMSE between predicted and observed
     rmse_value <- rmse(Y_norm[,i], y_pred)
@@ -104,17 +110,17 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
     if(var_scaling){
       print("Using variance scaling to calculated harmonized outcome \n")
       # Global mean/variance for harmonization
-      mu_global <- mean(colMeans(mu_out[(burn_in:num_saved_iters), ]))
-      sigma_global <- mean(colMeans(sigma_site_out[(burn_in:num_saved_iters), ]))
+      mu_global <- mean(colMeans(mu_out[(burn_in/thinning_interval+1):num_saved_iters, ]))
+      sigma_global <- mean(colMeans(sigma_site_out[(burn_in/thinning_interval+1):num_saved_iters, ]))
       # Harmonized outcome (ComBat scaling)
       y_harmonised <- numeric(length(Y_norm[,i]))
       for (j in seq_along(Y_norm[,i])) {
         site_idx <- match(sites[j], unique(sites))
-        y_harmonised[j] <- (Y_norm[j, i] - colMeans(mu_out[(burn_in:num_saved_iters), ])[j]) / sqrt(colMeans(sigma_site_out[(burn_in:num_saved_iters), ])[site_idx]) * sqrt(sigma_global) + mu_global
+        y_harmonised[j] <- (Y_norm[j, i] - colMeans(mu_out[(burn_in/thinning_interval+1):num_saved_iters, ])[j]) / sqrt(colMeans(sigma_site_out[(burn_in/thinning_interval+1):num_saved_iters, ])[site_idx]) * sqrt(sigma_global) + mu_global
       }
     } else{
-      print("Not using variance scaling to calculated harmonized outcome \n")  
-      y_harmonised <- Y_norm[,i] - colMeans(mu_out[(burn_in:num_saved_iters), ])
+      print("Not using variance scaling for harmonization \n")  
+      y_harmonised <- Y_norm[,i] - colMeans(mu_out[(burn_in/thinning_interval+1):num_saved_iters, ]) 
     }
     
     # Add harmonized and predicted values to the dataframe
@@ -130,12 +136,13 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
     
     # Save harmonized outcome to disk
     cat("Saving harmonized feature at $harmonised_", ll[i] , " \n")
-    save(file=paste0(saving_path, 'harmonised_',ll[i],'_raw.RData'), y_harmonised)
-    save(file=paste0(saving_path, 'harmonised_',ll[i],'_original.RData'), y_harmonised_original)
-
-    cat("Saving predicted feature at $harmonised_", ll[i] , " to evaluate BARTharm fit \n")
-    save(file=paste0(saving_path, 'predicted_',ll[i],'_raw.RData'), y_pred)
-    save(file=paste0(saving_path, 'predicted_',ll[i],'_original.RData'), y_pred_original)
+    #*save(file=paste0(saving_path, 'harmonised_',ll[i],'_raw.RData'), y_harmonised)
+    #*save(file=paste0(saving_path, 'harmonised_',ll[i],'_original.RData'), y_harmonised_original)
+    saving_data(y_harmonised, file_name = paste0('harmonised_',ll[i], '_raw'), 
+                saving_path, save_format = save_format)
+    saving_data(y_harmonised_original, 
+                file_name = paste0('harmonised_',ll[i], '_original'), 
+                saving_path, save_format = save_format)
   }
   
   # Save the full harmonized dataframe

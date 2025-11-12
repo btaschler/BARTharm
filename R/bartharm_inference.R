@@ -13,7 +13,9 @@
 
 bartharm_inference <- function(num_iter, thinning_interval, X_iqm_matrix, X_bio_matrix, Y, hypers_mu, hypers_tau, opts_mu, opts_tau, var_scaling, site_labels,  alpha0 = 0.001, beta0 = 0.001){
   
-  num_saved_iters <- ceiling(num_iter / thinning_interval) # Number of posterior samples saved
+  #* num_saved_iters <- ceiling(num_iter / thinning_interval) # Number of posterior samples saved
+  #* NOTE: this will create an error if num_iter %% thinning_inverval != 0 --> replace ceiling() with floor()
+  num_saved_iters <- floor(num_iter / thinning_interval)
   
   # Initialize matrices to store posterior samples
   mu_out <- matrix(NA, nrow = num_saved_iters, ncol = nrow(X_iqm_matrix))

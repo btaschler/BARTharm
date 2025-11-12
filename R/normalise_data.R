@@ -1,4 +1,3 @@
-
 # This function normalizes the data and extracts the features to be harmonized.
 # It applies quantile normalization to biological and IQM covariates while keeping the outcome variable.
 #
@@ -7,6 +6,8 @@
 # - data_iqm: Data frame of IQM covariates
 # - outcomes_col: Vector of column names corresponding to outcome variables
 # - id_col: name of subject ID column
+# - site_col: name of scanner/site ID column
+# - var_scaling: Logical. If TRUE, indicates that variance harmonization will be performed
 
 normalise_data <- function(data_bio, data_iqm, outcomes_col, id_col, site_col, var_scaling){
   
@@ -16,10 +17,11 @@ normalise_data <- function(data_bio, data_iqm, outcomes_col, id_col, site_col, v
   # Apply quantile normalization to IQM covariates, excluding num_ID
   norm_data_iqm <- as.data.frame(quantile_normalize_bart(data_iqm[, -which(names(data_iqm) %in% c(id_col, site_col))]))
   
+  # Re-add scanner ID column
   if(length(site_col) > 0){
     print("Adding site information to IQM data")
     cat("Number of sites:", length(unique(data_iqm[[site_col]])), "\n")
-    norm_data_iqm[[site_col]] <- as.numeric(as.factor(data_iqm[[site_col]]))  # Re-add site column
+    norm_data_iqm[[site_col]] <- as.numeric(as.factor(data_iqm[[site_col]]))  
   }
 
   # Keep only the outcome variables and num_ID

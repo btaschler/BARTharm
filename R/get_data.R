@@ -12,9 +12,11 @@
 # - bio_col: Vector of biological covariate column names (only used if simulate = FALSE).
 # - iqm_col: Vector of IQM covariate column names (only used if simulate = FALSE).
 # - outcomes_col: Vector of outcome column names.
+# - site_col: Name of scanner/site ID column (only used if simulate = FALSE).
 # - n_subjects: Number of subjects to simulate (default = 1000).
 # - linear_tau: Logical. If TRUE, simulate outcome with linear biological effect.
 # - linear_mu: Logical. If TRUE, model scanner effects linearly.
+# - var_scaling: Logical. If TRUE, indicates that variance harmonization will be performed.
 
 
 get_data <- function(simulate=FALSE, filepath = "", saving_path = "", save_format = "", id_col = c(), bio_col = c(), iqm_col = c(), outcomes_col = c(), site_col = c(), 

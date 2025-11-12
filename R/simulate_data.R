@@ -1,4 +1,3 @@
-
 # This function generates synthetic cross-sectional data for a study with scanner-related batch effects,
 # covariates (age, sex), biological features, and outcomes. It flexibly allows for correlated scanner assignment,
 # linear or nonlinear relationships, and outcome contamination by image quality metrics (IQMs).

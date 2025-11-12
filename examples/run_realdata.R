@@ -13,6 +13,7 @@ source("R/simulate_data.R")
 source("R/normalise_data.R")
 source("R/load_data.R")
 source("R/saving_data.R")
+source("R/combine_harmonised_outcomes.R")
 
 # Define path to real dataset (must be an .RData file containing a data frame)
 file_path <- 'data/real_data.RData' # example Real Data file (can also use .csv or .tsv)
@@ -66,7 +67,8 @@ df_harmonised <- bartharm(
 # If running harmonisation sequentially, i.e., length(outcomes_col) > 1, then df_harmonised already contains all harmonized outcomes
 
 # If running each outcome in parallelel, i.e., length(outcomes_col) = 1, you can combine the results into a single data frame with the following function:
-df_harmonised <- combine_harmonised_outcomes(df_harmonised, saving_path, save_format)
+# This has to be ran once all pararlel jobs are finished and all harmonized outcome files are saved in 'saving_path'
+df_harmonised <- combine_harmonised_outcomes(saving_path, save_format)
 
 # The final harmonized data frame is saved at: saving_path/df_combined_harmonised_realdata.<save_format>
 

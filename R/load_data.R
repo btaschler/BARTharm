@@ -7,6 +7,8 @@
 # - id_col: Column name containing subject IDs
 # - bio_col: Vector of column names corresponding to biological covariates
 # - iqm_col: Vector of column names corresponding to IQM covariates
+# - site_col: Column name corresponding to scanner/site IDs
+# - var_scaling: Logical. If TRUE, indicates that variance harmonization will be performed
 
 load_data <- function(filepath, id_col, bio_col, iqm_col, site_col, var_scaling){
 

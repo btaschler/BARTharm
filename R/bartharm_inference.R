@@ -1,4 +1,3 @@
-
 # This function runs the BARTharm algorithm for Bayesian Additive Regression Trees (BART) harmonization.
 # It performs Gibbs sampling to estimate harmonization parameters.
 #
@@ -10,11 +9,12 @@
 # - Y: Outcome variable
 # - hypers_mu, hypers_tau: Hyperparameter settings for mu and tau forests
 # - opts_mu, opts_tau: Options for mu and tau forests
+# - var_scaling: Logical. If TRUE, indicates that variance harmonization will be performed
+# - site_labels: Vector of site/scanner IDs corresponding to each subject
+# - alpha0, beta0: Hyperparameters for inverse-gamma prior on site-specific variances
 
 bartharm_inference <- function(num_iter, thinning_interval, X_iqm_matrix, X_bio_matrix, Y, hypers_mu, hypers_tau, opts_mu, opts_tau, var_scaling, site_labels,  alpha0 = 0.001, beta0 = 0.001){
-  
-  #* num_saved_iters <- ceiling(num_iter / thinning_interval) # Number of posterior samples saved
-  #* NOTE: this will create an error if num_iter %% thinning_inverval != 0 --> replace ceiling() with floor()
+  # Calculate number of saved iterations after thinning
   num_saved_iters <- floor(num_iter / thinning_interval)
   
   # Initialize matrices to store posterior samples
@@ -32,6 +32,7 @@ bartharm_inference <- function(num_iter, thinning_interval, X_iqm_matrix, X_bio_
   
   save_index <- 1  # Index for storing samples
 
+  # Initialize site-specific variances if variance scaling is enabled
   if(var_scaling){
     site_list <- unique(site_labels)
     cat("Site labels:", site_list, "\n")
@@ -40,13 +41,11 @@ bartharm_inference <- function(num_iter, thinning_interval, X_iqm_matrix, X_bio_
 
     sigma_site_out <- matrix(NA, nrow = num_saved_iters, ncol = n_sites)
     cat("Initializing site-specific variances \n")
-    # Initial site-specific variances
     sigma_sites <- rep(var(Y), n_sites)
-  }else{
+  } else{
     print("Not using site-specific variances \n")
     sigma_site_out <- matrix(NA, nrow = num_saved_iters, ncol = 1)
   }
-  
   
   cat("Starting sampling\n")
   
@@ -64,10 +63,10 @@ bartharm_inference <- function(num_iter, thinning_interval, X_iqm_matrix, X_bio_
     
     tau <- tau_forest$do_gibbs(X_bio_matrix, R, X_bio_matrix, 1)  # Update tau using Gibbs sampling
 
+    # Update site-specific variances if variance scaling is enabled
     if(var_scaling){
       # Compute residuals
       residuals <- as.numeric(Y) - mu - tau
-      
       # Update site-specific variances (ComBat style)
       for (s in seq_along(site_list)) {
         mask <- site_labels == site_list[s]

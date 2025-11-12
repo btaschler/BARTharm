@@ -10,6 +10,7 @@
 # - iqm_col: Vector of IQM covariate column names (for real data).
 # - outcomes_col: Vector of outcome column names.
 # - id_col: Name of subject ID column.
+# - site_col: Name of scanner/site ID column (required if var_scaling = TRUE).
 # - n_subjects: Number of simulated subjects (default = 1000).
 # - linear_tau: Logical. If TRUE, simulate outcome with linear biological effects.
 # - linear_mu: Logical. If TRUE, simulate scanner effects linearly.
@@ -20,6 +21,7 @@
 # - num_tree_tau: Number of trees in the tau forest (biological covariates).
 # - beta_mu, beta_tau: BART prior parameters for mu and tau forests.
 # - gamma_mu, gamma_tau: BART prior parameters controlling sparsity.
+# - var_scaling: Logical. If TRUE, harmonize variance across sites (requires site_col).
 
 
 bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simulate_data = TRUE, bio_col = c(), iqm_col = c(), outcomes_col = c(), id_col = c(), site_col = c(), n_subjects = 1000, linear_tau = TRUE, linear_mu = TRUE,
@@ -55,11 +57,8 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
   
   ll <- colnames(Y) # Names of outcome variables and ID column
   cat("Harmonizing: ", ll[1:(length(ll)-1)], "\n") # Skip ID column
-  
-  #* num_saved_iters <- ceiling(num_iter / thinning_interval) # Number of posterior samples saved
+
   num_saved_iters <- floor(num_iter / thinning_interval)
-  #* NOTE: this will create an error if num_iter %% thinning_inverval != 0 --> replace ceiling() with floor()
-  
   df_harmonised <- df  # Make a copy of the raw data to store harmonized results
   
   # Loop over each outcome variable (excluding ID column)
@@ -84,11 +83,6 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
     
     # Save posterior samples
     cat("Saving full posterior samples for feature: ", ll[i], "\n")
-    
-    #*save(file=paste0(saving_path, 'mu_out_',ll[i],'.RData'), mu_out)
-    #*save(file=paste0(saving_path, 'tau_out_',ll[i],'.RData'), tau_out)
-    #*save(file=paste0(saving_path, 'sigma_out_',ll[i],'.RData'), sigma_out)
-    #*note: allow different save formats
     saving_data(mu_out, file_name = paste0('mu_out_',ll[i]), saving_path, save_format = save_format)
     saving_data(tau_out, file_name = paste0('tau_out_',ll[i]), saving_path, save_format = save_format)
     saving_data(sigma_out, file_name = paste0('sigma_out_',ll[i]), saving_path, save_format = save_format)
@@ -136,19 +130,21 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
     
     # Save harmonized outcome to disk
     cat("Saving harmonized feature at $harmonised_", ll[i] , " \n")
-    #*save(file=paste0(saving_path, 'harmonised_',ll[i],'_raw.RData'), y_harmonised)
-    #*save(file=paste0(saving_path, 'harmonised_',ll[i],'_original.RData'), y_harmonised_original)
     saving_data(y_harmonised, file_name = paste0('harmonised_',ll[i], '_raw'), 
                 saving_path, save_format = save_format)
     saving_data(y_harmonised_original, 
                 file_name = paste0('harmonised_',ll[i], '_original'), 
                 saving_path, save_format = save_format)
+    cat("Saving predicted feature at $predicted_", ll[i] , " \n")
+    saving_data(y_pred, file_name = paste0('predicted_',ll[i], '_raw'), 
+                saving_path, save_format = save_format)
+    saving_data(y_pred_original, 
+                file_name = paste0('predicted_',ll[i], '_original'), 
+                saving_path, save_format = save_format)
   }
   
-  # Save the full harmonized dataframe
-  
+  # Save the full harmonized dataframe (if running sequentially or simulating data)
   if(simulate_data){
-    #save(file=paste0(saving_path, 'harmonised_simulated_df.RData'), df_harmonised)
     cat("Saving final harmonized dataset\n")
     saving_data(df_harmonised, "harmonised_simulated_df", saving_path, save_format = save_format)
   } else {

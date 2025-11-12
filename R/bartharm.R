@@ -101,32 +101,34 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
     
     # Compute harmonized outcome by removing nuisance (mu) component
     cat("Evaluating harmonized feature: ", ll[i], "\n")
+    y_harmonised <- Y_norm[,i] - colMeans(mu_out[(burn_in/thinning_interval+1):num_saved_iters, ]) 
+
     if(var_scaling){
       print("Using variance scaling to calculated harmonized outcome \n")
       # Global mean/variance for harmonization
       mu_global <- mean(colMeans(mu_out[(burn_in/thinning_interval+1):num_saved_iters, ]))
       sigma_global <- mean(colMeans(sigma_site_out[(burn_in/thinning_interval+1):num_saved_iters, ]))
       # Harmonized outcome (ComBat scaling)
-      y_harmonised <- numeric(length(Y_norm[,i]))
+      y_harmonised_scaled <- numeric(length(Y_norm[,i]))
       for (j in seq_along(Y_norm[,i])) {
         site_idx <- match(sites[j], unique(sites))
-        y_harmonised[j] <- (Y_norm[j, i] - colMeans(mu_out[(burn_in/thinning_interval+1):num_saved_iters, ])[j]) / sqrt(colMeans(sigma_site_out[(burn_in/thinning_interval+1):num_saved_iters, ])[site_idx]) * sqrt(sigma_global) + mu_global
+        y_harmonised_scaled[j] <- (Y_norm[j, i] - colMeans(mu_out[(burn_in/thinning_interval+1):num_saved_iters, ])[j]) / sqrt(colMeans(sigma_site_out[(burn_in/thinning_interval+1):num_saved_iters, ])[site_idx]) * sqrt(sigma_global) + mu_global
       }
-    } else{
-      print("Not using variance scaling for harmonization \n")  
-      y_harmonised <- Y_norm[,i] - colMeans(mu_out[(burn_in/thinning_interval+1):num_saved_iters, ]) 
-    }
+    } 
     
     # Add harmonized and predicted values to the dataframe
     df_harmonised[, paste0(ll[i], "_harmonised_raw")] <- y_harmonised
     df_harmonised[, paste0(ll[i], "_predicted_raw")] <- y_pred
+    if(var_scaling){df_harmonised[, paste0(ll[i], "_harmonised_scaled_raw")] <- y_harmonised_scaled}
 
     y_harmonised_original <- y_harmonised * original_sds[i] + original_means[i]
     y_pred_original <- y_pred * original_sds[i] + original_means[i]
+    if(var_scaling){y_harmonised_scaled_original <- y_harmonised_scaled * original_sds[i] + original_means[i]}
 
     # Add harmonized and predicted values to the dataframe
     df_harmonised[, paste0(ll[i], "_harmonised_original")] <- y_harmonised_original
     df_harmonised[, paste0(ll[i], "_predicted_original")] <- y_pred_original
+    if(var_scaling){df_harmonised[, paste0(ll[i], "_harmonised_scaled_original")] <- y_harmonised_scaled_original}
     
     # Save harmonized outcome to disk
     cat("Saving harmonized feature at $harmonised_", ll[i] , " \n")
@@ -135,6 +137,13 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
     saving_data(y_harmonised_original, 
                 file_name = paste0('harmonised_',ll[i], '_original'), 
                 saving_path, save_format = save_format)
+    if(var_scaling){
+      saving_data(y_harmonised_scaled, file_name = paste0('harmonised_',ll[i], '_scaled_raw'), 
+                  saving_path, save_format = save_format)
+      saving_data(y_harmonised_scaled_original, 
+                  file_name = paste0('harmonised_',ll[i], '_scaled_original'), 
+                  saving_path, save_format = save_format)
+    }
     cat("Saving predicted feature at $predicted_", ll[i] , " \n")
     saving_data(y_pred, file_name = paste0('predicted_',ll[i], '_raw'), 
                 saving_path, save_format = save_format)

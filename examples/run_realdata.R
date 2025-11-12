@@ -63,6 +63,11 @@ df_harmonised <- bartharm(
   var_scaling = FALSE                # Whether to harmonize variance (is set to TRUE, site_col must be provided)
 )
 
-# Extract harmonized versions of the outcomes
-harmonised_NBV1 <- df_harmonised$NBV1_harmonised_original
-harmonised_NBV2 <- df_harmonised$NBV2_harmonised_original
+# If running harmonisation sequentially, i.e., length(outcomes_col) > 1, then df_harmonised already contains all harmonized outcomes
+
+# If running each outcome in parallelel, i.e., length(outcomes_col) = 1, you can combine the results into a single data frame with the following function:
+df_harmonised <- combine_harmonised_outcomes(df_harmonised, saving_path, save_format)
+
+# The final harmonized data frame is saved at: saving_path/df_combined_harmonised_realdata.<save_format>
+
+  

@@ -147,7 +147,7 @@ bartharm <- function(file_path = " ", saving_path = " ", save_format = "", simul
   } else {
     if((length(ll)-1)>1){
       cat("Saving final harmonized dataset\n")
-      saving_data(df_harmonised, "harmonised_realdata_df", saving_path, save_format = save_format)
+      saving_data(df_harmonised, "df_combined_harmonised_realdata", saving_path, save_format = save_format)
     }
   }
   
